@@ -1,4 +1,4 @@
-﻿<x-admin-layout>
+<x-admin-layout>
 
 <!-- Page Header -->
 <div class="mb-6 flex items-start justify-between">
@@ -134,11 +134,16 @@
             <div id="reporting-map" class="w-full h-full z-0"></div>
             
             <!-- Legend (Floating) -->
-            <div class="absolute bottom-6 left-6 z-[999] bg-white/90 backdrop-blur-md border border-amber-100 rounded-2xl p-5 shadow-xl text-xs space-y-2.5">
-                <p class="font-bold text-gray-400 uppercase tracking-widest text-[10px] mb-2">Status Key</p>
-                <div class="flex items-center gap-2.5"><span class="w-3.5 h-3.5 rounded-full bg-green-500 shadow-sm border-2 border-white"></span><span class="font-semibold text-gray-700">Available</span></div>
-                <div class="flex items-center gap-2.5"><span class="w-3.5 h-3.5 rounded-full bg-orange-500 shadow-sm border-2 border-white"></span><span class="font-semibold text-gray-700">Pending</span></div>
-                <div class="flex items-center gap-2.5"><span class="w-3.5 h-3.5 rounded-full bg-blue-500 shadow-sm border-2 border-white"></span><span class="font-semibold text-gray-700">Adopted</span></div>
+            <div class="absolute bottom-6 left-6 z-[999] bg-white/90 backdrop-blur-md border border-amber-100 rounded-2xl p-5 shadow-xl text-[11px] space-y-2 max-h-[220px] overflow-y-auto">
+                <p class="font-bold text-gray-400 uppercase tracking-widest text-[9px] mb-1.5">Status Key</p>
+                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-green-500 shadow-sm border-2 border-white"></span><span class="font-semibold text-gray-700">Available</span></div>
+                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-orange-500 shadow-sm border-2 border-white"></span><span class="font-semibold text-gray-700">Pending</span></div>
+                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-blue-500 shadow-sm border-2 border-white"></span><span class="font-semibold text-gray-700">Adopted</span></div>
+                
+                <p class="font-bold text-gray-400 uppercase tracking-widest text-[9px] pt-1.5 border-t border-amber-50 mb-1.5">Incidents Key</p>
+                <div class="flex items-center gap-2"><span class="w-4 h-4 rounded-full bg-[#ef4444] border-2 border-white text-white font-black flex items-center justify-center text-[8px] leading-none">!</span><span class="font-semibold text-gray-700">Injury</span></div>
+                <div class="flex items-center gap-2"><span class="w-4 h-4 rounded-full bg-[#f97316] border-2 border-white text-white font-black flex items-center justify-center text-[8px] leading-none">!</span><span class="font-semibold text-gray-700">Missing</span></div>
+                <div class="flex items-center gap-2"><span class="w-4 h-4 rounded-full bg-[#3b82f6] border-2 border-white text-white font-black flex items-center justify-center text-[8px] leading-none">!</span><span class="font-semibold text-gray-700">Stray</span></div>
             </div>
         </div>
         <!-- Sidebar -->
@@ -195,11 +200,31 @@ function reportingMap() {
             ...c,
             image_url: c.image ? `/storage/${c.image}` : `https://ui-avatars.com/api/?name=${c.name}&background=fde68a&color=92400e`
         })),
+        reports: @json($userReports).map(r => {
+            let lat = null, lng = null;
+            if (r.location) {
+                let parts = r.location.split(',');
+                if (parts.length === 2) {
+                    lat = parseFloat(parts[0].trim());
+                    lng = parseFloat(parts[1].trim());
+                }
+            }
+            return {
+                ...r,
+                lat: lat,
+                lng: lng,
+                reporter_name: r.user ? r.user.name : (r.reporter_name || 'Unknown')
+            };
+        }).filter(r => r.lat !== null && r.lng !== null),
         search: '',
         markers: [],
+        reportMarkers: {},
 
         init() {
             this.initMap();
+            window.focusReport = (id, lat, lng) => {
+                this.focusReportLocation(id, lat, lng);
+            };
         },
 
         get filteredCats() {
@@ -219,6 +244,7 @@ function reportingMap() {
             }).addTo(this.map);
 
             this.updateMarkers();
+            this.updateReportMarkers();
         },
 
         updateMarkers() {
@@ -265,10 +291,64 @@ function reportingMap() {
             });
         },
 
+        updateReportMarkers() {
+            this.reports.forEach(report => {
+                let colorCode = '#ef4444'; // default red (injury)
+                if (report.type === 'Missing') colorCode = '#f97316'; // orange
+                if (report.type === 'Stray') colorCode = '#3b82f6'; // blue
+                
+                const icon = L.divIcon({
+                    className: 'report-pin',
+                    html: `<div style="background-color:${colorCode}; width:22px; height:22px; border-radius:50%; border:3px solid white; box-shadow:0 2px 8px rgba(0,0,0,0.3); display:flex; align-items:center; justify-content:center; color:white; font-family:sans-serif; font-size:10px; font-weight:900;" class="flex items-center justify-center font-bold">!</div>`,
+                    iconSize: [22, 22],
+                    iconAnchor: [11, 11]
+                });
+
+                const marker = L.marker([report.lat, report.lng], { icon }).addTo(this.map);
+                
+                const popupContent = `
+                    <div class="text-center p-3 min-w-[170px]">
+                        <div class="mb-2">
+                            <span class="inline-block px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider text-white" style="background-color: ${colorCode}">
+                                🚨 ${report.type}
+                            </span>
+                        </div>
+                        <h3 class="font-serif font-bold text-sm text-gray-800 leading-tight mb-1">Report #${report.id}</h3>
+                        <p class="text-xs text-gray-600 mb-2 font-medium italic">"${report.description.substring(0, 45)}${report.description.length > 45 ? '...' : ''}"</p>
+                        <div class="text-[10px] text-gray-500">Reporter: ${report.reporter_name}</div>
+                        <div class="text-[9px] text-gray-400 mt-0.5">Status: <span class="font-bold text-gray-600">${report.status}</span></div>
+                        <div class="mt-3">
+                            <a href="/admin/reports/${report.id}" class="inline-block w-full py-1.5 bg-[#C9A84C] hover:bg-amber-600 text-white text-[10px] font-bold rounded-lg transition-colors shadow-sm">View Details</a>
+                        </div>
+                    </div>
+                `;
+                
+                marker.bindPopup(popupContent, { closeButton: false, className: 'rounded-xl shadow-2xl overflow-hidden' });
+                this.reportMarkers[report.id] = marker;
+            });
+        },
+
         focusCat(cat) {
             this.map.flyTo([cat.gps_lat, cat.gps_lng], 17, { duration: 1.5 });
             const marker = this.markers.find(m => m.getLatLng().lat == cat.gps_lat && m.getLatLng().lng == cat.gps_lng);
             if (marker) marker.openPopup();
+        },
+
+        focusReportLocation(id, lat, lng) {
+            const mapContainer = document.getElementById('reporting-map');
+            if (mapContainer) {
+                mapContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            
+            setTimeout(() => {
+                this.map.flyTo([lat, lng], 17, { duration: 1.2 });
+                const marker = this.reportMarkers[id];
+                if (marker) {
+                    setTimeout(() => {
+                        marker.openPopup();
+                    }, 1200);
+                }
+            }, 300);
         },
 
         locateMe() {

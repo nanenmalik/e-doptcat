@@ -86,26 +86,17 @@
                     @if($report->location)
                         <div class="border-t border-[#F2EDE3] pt-6">
                             <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-2">Location Details</span>
-                            <div class="flex items-center justify-between bg-[#FAF8F5] border border-[#F0EBE3] rounded-2xl p-4 gap-4">
-                                <div class="flex items-center gap-3 min-w-0">
-                                    <div class="w-10 h-10 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 flex-shrink-0">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25s-7.5-4.108-7.5-11.25A7.5 7.5 0 1119.5 10.5z"/>
-                                        </svg>
-                                    </div>
-                                    <div class="min-w-0">
-                                        <p class="text-sm font-bold text-gray-800 truncate">{{ $report->location }}</p>
-                                        <p class="text-xs text-gray-500">Provided by reporter</p>
-                                    </div>
-                                </div>
-                                <a href="https://www.google.com/maps/search/?api=1&query={{ urlencode($report->location) }}" target="_blank"
-                                    class="inline-flex items-center gap-1.5 text-xs font-bold text-[#C9A84C] hover:text-amber-700 transition flex-shrink-0 px-3 py-1.5 rounded-lg hover:bg-[#FAF8F0]">
-                                    View on Maps
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/>
+                            <div class="bg-[#FAF8F5] border border-[#F0EBE3] rounded-2xl p-4 flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 flex-shrink-0">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25s-7.5-4.108-7.5-11.25A7.5 7.5 0 1119.5 10.5z"/>
                                     </svg>
-                                </a>
+                                </div>
+                                <div class="min-w-0">
+                                    <p class="text-sm font-bold text-gray-800 truncate">{{ $report->location }}</p>
+                                    <p class="text-xs text-gray-500">Provided by reporter</p>
+                                </div>
                             </div>
                         </div>
                     @endif
